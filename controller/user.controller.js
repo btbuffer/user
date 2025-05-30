@@ -5,12 +5,17 @@ const User = require("../models/user.model");
 // Create user with the following attr:
 // name, email, password, isAdmin, hobbies
 const createUser = async (req, res) => {
-  const { password, ...others } = req.body;
+  const { password, email, ...others } = req.body;
+  const emailExist = await User.findOne({ email });
+
+  if (emailExist) {
+    res.send("User already exist!");
+  }
 
   try {
     const salt = 5;
     const hashedPwd = await bcrypt.hash(password, salt);
-    const user = new User({ password: hashedPwd, ...others });
+    const user = new User({ password: hashedPwd, email, ...others });
     await user.save();
     res.json(user);
   } catch (error) {
