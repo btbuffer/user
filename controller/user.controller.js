@@ -1,12 +1,21 @@
+const bcrypt = require("bcrypt");
+
 const User = require("../models/user.model");
 
 // Create user with the following attr:
 // name, email, password, isAdmin, hobbies
 const createUser = async (req, res) => {
-  const user = new User(req.body);
-  await user.save();
+  const { password, ...others } = req.body;
 
-  res.json(user);
+  try {
+    const salt = 5;
+    const hashedPwd = await bcrypt.hash(password, salt);
+    const user = new User({ password: hashedPwd, ...others });
+    await user.save();
+    res.json(user);
+  } catch (error) {
+    res.json({ message: "Error hashing password" });
+  }
 };
 
 // Get all users;
