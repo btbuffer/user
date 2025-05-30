@@ -15,6 +15,7 @@ app.use(express.json());
 app.use(router);
 
 async function init() {
+  // For testing locally
   app.listen(port, () => console.log(`App listens on port ${port}`));
   await mongoose.connect(process.env.DBPOINTER);
 }
