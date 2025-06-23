@@ -6,7 +6,7 @@ const createPost = async (request, response) => {
   if (!request.user) {
     return response
       .status(401)
-      .send({ msg: "Unauthorized resource! please, login" });
+      .send({ msg: "Please, login to create a post." });
   }
 
   const {
@@ -21,6 +21,7 @@ const createPost = async (request, response) => {
 
 const fetchPost = async (request, response) => {
   if (!request.user) {
+    // is this condition necessary for fetchPost: || request.user.userId !== foundPost.creatorId
     return response.status(401).send({ msg: "Unauthorized! Please, login" });
   }
 
@@ -37,6 +38,7 @@ const fetchPost = async (request, response) => {
   }
 
   const foundPost = await Post.findById(postId);
+
   if (!foundPost) return response.status(404).send({ msg: "Post not found" });
 
   return response.status(200).send(foundPost);
@@ -44,66 +46,82 @@ const fetchPost = async (request, response) => {
 
 // Update a post
 const updatePost = async (request, response) => {
-  if (!request.user) {
-    return response.status(401).send({ msg: "Unauthorized! Please, login." });
-  }
-
   const {
     params: { postId },
     body,
+    user,
+  } = request;
+
+  // Check for valid Post ID and respond with
+  // 400 status code for invalid or not suitable ID
+  const isValid =
+    mongoose.Types.ObjectId.isValid(postId) &&
+    String(new mongoose.Types.ObjectId(postId)) === postId;
+  if (!isValid) return response.status(400).send({ msg: "Invalid post ID" });
+
+  // Check if a user is authenticated to perform this action.
+  // Otherwise, respond with 401 status code: unauthorized,
+  // i.e., client not authenticated.
+  if (!user) {
+    return response.status(401).send({ msg: "Authentication required." });
+  }
+
+  // Allow Post update only if the post's author is the one
+  // making the changes. Otherwise, respond with 403 status
+  // code: performed action is forbidden.
+  const foundPost = await Post.findById(postId);
+  if (user.userId !== foundPost.creatorId.toString())
+    return response
+      .status(403)
+      .send({ msg: "You do not have permission to perform this action." });
+
+  // Check if the post exist, otherwise respond with 404 status
+  // code: resource is not found.
+  if (!foundPost) {
+    return response.status(404).send({ message: "Post not found" });
+  }
+
+  const updatedPost = await Post.findByIdAndUpdate(postId, body, { new: true });
+
+  return response.status(200).json(updatedPost);
+};
+
+// Delete a post only if a user is the
+// author of the post.
+const deletePost = async (request, response) => {
+  const {
+    params: { postId },
+    user,
   } = request;
 
   const isValid =
     mongoose.Types.ObjectId.isValid(postId) &&
     String(new mongoose.Types.ObjectId(postId)) === postId;
-
   if (!isValid) return response.status(400).send({ msg: "Invalid post ID" });
 
-  const post = (postExist = await Post.findById(postId));
-  if (!postExist) {
-    return res.json({ message: "Post not found" });
-  }
+  if (!user)
+    return response.status(401).send({ msg: "Authentication required" });
 
-  if (post.creatorId.toString() === userId) {
-    console.log(otherPayload);
-    const postUpdated = await Post.findByIdAndUpdate(
-      postId,
-      { ...otherPayload },
-      { returnOriginal: false }
-    );
-    return res.json(postUpdated);
-  }
+  // Don't allow post deletion if a user is not the author
+  // and/or not the admin. And respond with 403 status
+  // code: performed action is forbidden, i.e.,
 
-  res.json({
-    message: "Unauthorized resources! You are not the author of this post.",
-  });
-};
+  // isOwner AND notAdmin === false && true = Have permission
+  // notOwner AND notAdmin === true && true = Do not have permission
+  // notOwner AND isAdmin === true && false = Have permission
+  // isOwner AND isAdmin === false && false = Havve permission
+  const foundPost = await Post.findById(postId);
+  if (user.userId !== foundPost.creatorId.toString() && !foundPost.isAdmin)
+    return response
+      .status(403)
+      .send({ msg: "You do not have permission to perform this action." });
 
-// Delete a post only if a user is the
-// author of the post.
-const deletePost = async (req, res) => {
-  // Retrieve the post target for deletion
-  const { postId } = req.params;
-  // And get a author's id
-  const { userId } = req.body;
-
-  // send "post not found" response if the post targets
-  // by postId does not exist in the data storage.
-  const post = (postExist = await Post.findById(postId));
-  if (!postExist) {
-    return res.json({ message: "Post not found" });
-  }
+  if (!foundPost) return response.status(404).send({ msg: "Post not found" });
 
   // Verify the ownership of the post and ensure
   // the author of the post is one deleting a post.
-  if (post.creatorId?.toString() === userId) {
-    await Post.deleteOne({ _id: postId });
-    return res.json({ message: "post successfully deleted!" });
-  }
-
-  // Respond with "Unauthorized resources" for wrong
-  // ownership.
-  res.json({ message: "Unauthorized resources!" });
+  await Post.findByIdAndDelete(postId);
+  return response.status(200).send({ msg: "post successfully deleted!" });
 };
 
 module.exports = { createPost, fetchPost, updatePost, deletePost };
