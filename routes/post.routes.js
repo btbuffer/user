@@ -12,7 +12,7 @@ const router = Router();
 
 router.post("/api/posts", verifyUser, createPost);
 router.get("/api/posts/:postId", verifyUser, fetchPost);
-router.put("/api/posts/:postId", updatePost);
+router.put("/api/posts/:postId", verifyUser, updatePost);
 router.delete("/api/posts/:postId", deletePost);
 
 module.exports = router;
