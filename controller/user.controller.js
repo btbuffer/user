@@ -1,42 +1,77 @@
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const User = require("../models/user.model");
+const verifyUser = require("../middleware/auth");
 
 // Create user with the following attr:
 // name, email, password, isAdmin, hobbies
-const createUser = async (req, res) => {
-  const { password, email, ...others } = req.body;
-  const emailExist = await User.findOne({ email });
+// 6858587ddbf89f7dd47dc6fa
+const homeTest = (req, res) => {
+  // res.cookie("userId", "23sr11").send({ message: "Cookie sent!" });
+  console.log(req.headers);
+  console.log(req.cookies);
+  return res.send(req.headers);
+};
 
-  if (emailExist) {
-    res.send("User already exist!");
+const createUser = async (request, response) => {
+  const { email, ...userPayload } = request.body;
+
+  const userExist = await User.findOne({ email });
+  if (userExist) {
+    return response.send({ msg: "user already exist." });
   }
 
-  try {
-    const salt = 5;
-    const hashedPwd = await bcrypt.hash(password, salt);
-    const user = new User({ password: hashedPwd, email, ...others });
-    await user.save();
-    res.json(user);
-  } catch (error) {
-    res.json({ message: "Error hashing password" });
+  const round = 10;
+  const password = await bcrypt.hash(userPayload.password, round);
+  const user = new User({ ...userPayload, email, password });
+
+  await user.save();
+  response.json({ userId: user.id });
+};
+
+const loginUser = async (request, response) => {
+  const { email, password } = request.body;
+
+  // alert user for invalid login credentials:
+  // wrong password or email
+  const foundUser = await User.findOne({ email });
+  if (!foundUser) {
+    return response.status(404).send({ msg: "User doesn't exist" });
   }
+
+  // compare the provided password with registered pwd.
+  const match = await bcrypt.compare(password, foundUser.password);
+  if (!match) {
+    return response.send({ msg: "Incorrect email or password!" });
+  }
+
+  const token = jwt.sign({ userId: foundUser.id }, process.env.SECRET, {
+    expiresIn: "1h",
+  });
+
+  response
+    .cookie("token", token, { httpOnly: true, Secure: true })
+    .send({ message: "user login successfully!" });
 };
 
 // Get all users;
-const getUsers = async (req, res) => {
+const getUsers = async (request, response) => {
   const users = await User.find();
-  res.json(users);
+  response.send(users);
 };
 
-const updateUser = async (req, res) => {
-  const { id: userID } = req.params;
-  // const {, ...others} = req.body;
+const updateUser = async (request, response) => {
+  const { id } = request.params;
 
-  const updatedUser = await User.findOneAndUpdate({ _id: userID }, req.body, {
-    returnOriginal: false,
+  const foundUser = await User.findOneAndUpdate({ _id: id }, request.body, {
+    new: true,
   });
-  res.json(updatedUser);
+
+  if (!foundUser)
+    return response.status(404).send({ msg: "User does not exist!" });
+  // 64bce457bcdfeabc12345678
+  response.send(foundUser);
 };
 
 const deleteUser = async (req, res) => {
@@ -47,4 +82,11 @@ const deleteUser = async (req, res) => {
   res.send(`${name} deleted!`);
 };
 
-module.exports = { createUser, getUsers, updateUser, deleteUser };
+module.exports = {
+  createUser,
+  loginUser,
+  getUsers,
+  updateUser,
+  deleteUser,
+  homeTest,
+};
