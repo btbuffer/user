@@ -1,5 +1,6 @@
 const { Router } = require("express");
 const verifyUser = require("../middleware/auth");
+const resolvePostById = require("../middleware/resolvePost");
 
 const {
   createPost,
@@ -11,8 +12,8 @@ const {
 const router = Router();
 
 router.post("/api/posts", verifyUser, createPost);
-router.get("/api/posts/:postId", verifyUser, fetchPost);
-router.put("/api/posts/:postId", verifyUser, updatePost);
-router.delete("/api/posts/:postId", deletePost);
+router.get("/api/posts/:postId", fetchPost);
+router.put("/api/posts/:postId", verifyUser, resolvePostById, updatePost);
+router.delete("/api/posts/:postId", verifyUser, resolvePostById, deletePost);
 
 module.exports = router;
