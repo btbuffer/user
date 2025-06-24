@@ -2,7 +2,6 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const User = require("../models/user.model");
-const verifyUser = require("../middleware/auth");
 
 const createUser = async (request, response) => {
   const { email, ...userPayload } = request.body;
@@ -36,9 +35,13 @@ const loginUser = async (request, response) => {
     return response.status(400).send({ msg: "Incorrect email or password!" });
   }
 
-  const token = jwt.sign({ userId: foundUser.id }, process.env.SECRET, {
-    expiresIn: "1h",
-  });
+  const token = jwt.sign(
+    { userId: foundUser.id, isAdmin: foundUser.isAdmin },
+    process.env.SECRET,
+    {
+      expiresIn: "1h",
+    }
+  );
 
   response
     .cookie("token", token, { httpOnly: true, Secure: true })
