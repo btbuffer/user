@@ -1,11 +1,11 @@
-const { Schema, model } = require("mongoose");
+const mongoose = require("mongoose");
 // Field names required are:
 // 1) name
 // 2) email
 // 3) password
 // 4) isAdmin
 // 5) hobbies
-const UserSchema = new Schema(
+const UserSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -25,10 +25,14 @@ const UserSchema = new Schema(
       default: false,
     },
     hobbies: [String],
-    // {timestamps: true},
+    kyc: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Kyc",
+      unique: true,
+    },
   },
   { timestamps: true }
 );
 
-const User = model("User", UserSchema);
+const User = mongoose.model("User", UserSchema);
 module.exports = User;
