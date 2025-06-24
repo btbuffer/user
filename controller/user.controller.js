@@ -4,16 +4,6 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 const verifyUser = require("../middleware/auth");
 
-// Create user with the following attr:
-// name, email, password, isAdmin, hobbies
-// 6858587ddbf89f7dd47dc6fa
-const homeTest = (req, res) => {
-  // res.cookie("userId", "23sr11").send({ message: "Cookie sent!" });
-  console.log(req.headers);
-  console.log(req.cookies);
-  return res.send(req.headers);
-};
-
 const createUser = async (request, response) => {
   const { email, ...userPayload } = request.body;
 
@@ -43,7 +33,7 @@ const loginUser = async (request, response) => {
   // compare the provided password with registered pwd.
   const match = await bcrypt.compare(password, foundUser.password);
   if (!match) {
-    return response.send({ msg: "Incorrect email or password!" });
+    return response.status(400).send({ msg: "Incorrect email or password!" });
   }
 
   const token = jwt.sign({ userId: foundUser.id }, process.env.SECRET, {
@@ -88,5 +78,4 @@ module.exports = {
   getUsers,
   updateUser,
   deleteUser,
-  homeTest,
 };
