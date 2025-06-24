@@ -14,13 +14,6 @@ const resolvePostById = async (request, response, next) => {
     String(new mongoose.Types.ObjectId(postId)) === postId;
   if (!isValid) return response.status(400).send({ msg: "Invalid post ID" });
 
-  // Check if a user is authenticated to perform this action.
-  // Otherwise, respond with 401 status code: unauthorized,
-  // i.e., client not authenticated.
-  if (!user) {
-    return response.status(401).send({ msg: "Authentication required." });
-  }
-
   const foundPost = await Post.findById(postId);
 
   // Check if the post exist, otherwise respond with 404 status
