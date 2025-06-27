@@ -1,6 +1,8 @@
-const { Schema, model } = require("mongoose");
+const { mongoose } = require("mongoose");
 
-const PostSchema = new Schema(
+// Post.find('userId') = many posts
+// User.find('postId') p
+const PostSchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -10,13 +12,14 @@ const PostSchema = new Schema(
       type: String,
       required: true,
     },
-    creatorId: {
-      type: Schema.Types.ObjectId,
+    creator: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
   },
   { timestamps: true }
 );
 
-const Post = model("posts", PostSchema);
+const Post = mongoose.model("post", PostSchema);
 module.exports = Post;
