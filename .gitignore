@@ -3,4 +3,8 @@ package-lock.json
 .env
 .cookies
 .paulCookies
+.afolabiCookies
+.lekanCookies
 test.bcrypt.js
+
+models/book.model.js
