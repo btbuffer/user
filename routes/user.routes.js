@@ -1,8 +1,9 @@
 const { Router } = require("express");
-const verifyUser = require("../middleware/auth");
+// const authenticateUser = require("../middleware/auth");
 
 const {
   getUsers,
+  getUser,
   createUser,
   updateUser,
   deleteUser,
@@ -10,9 +11,10 @@ const {
 } = require("../controller/user.controller");
 const router = Router();
 
-router.post("/api/users", createUser);
+router.post("/api/users/register", createUser);
 router.post("/api/users/auth", loginUser);
-router.get("/api/users", verifyUser, getUsers);
+router.get("/api/users", getUsers);
+router.get("/api/users/:userId", getUser);
 router.put("/api/users/:id", updateUser);
 router.delete("/api/users/:id", deleteUser);
 
