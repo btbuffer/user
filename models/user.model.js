@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 // 3) password
 // 4) isAdmin
 // 5) hobbies
+// afolabi: forbesKeY
 const UserSchema = new mongoose.Schema(
   {
     name: {
@@ -25,10 +26,17 @@ const UserSchema = new mongoose.Schema(
       default: false,
     },
     hobbies: [String],
+    posts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Post",
+      },
+    ],
     kyc: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Kyc",
       unique: true,
+      sparse: true,
     },
   },
   { timestamps: true }
