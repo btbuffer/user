@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 
 const createUser = async (request, response) => {
+  // console.log("Body: ", request.body);
   const { email, ...userPayload } = request.body;
 
   const userExist = await User.findOne({ email });
@@ -54,6 +55,15 @@ const getUsers = async (request, response) => {
   response.send(users);
 };
 
+// Get a user
+const getUser = async (request, response) => {
+  const {
+    params: { userId },
+  } = request;
+  const user = await User.findById(userId);
+  response.send(user);
+};
+
 const updateUser = async (request, response) => {
   const { id } = request.params;
 
@@ -79,6 +89,7 @@ module.exports = {
   createUser,
   loginUser,
   getUsers,
+  getUser,
   updateUser,
   deleteUser,
 };
