@@ -1,10 +1,10 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { mongoose } = require("mongoose");
 
 const User = require("../models/user.model");
 
 const createUser = async (request, response) => {
-  // console.log("Body: ", request.body);
   const { email, ...userPayload } = request.body;
 
   const userExist = await User.findOne({ email });
@@ -46,6 +46,7 @@ const loginUser = async (request, response) => {
 
   response
     .cookie("token", token, { httpOnly: true, Secure: true })
+    // .status(200)
     .send({ message: "user login successfully!" });
 };
 
@@ -77,12 +78,42 @@ const updateUser = async (request, response) => {
   response.send(foundUser);
 };
 
-const deleteUser = async (req, res) => {
-  const { id: userID } = req.params;
-  const { name } = await User.findById(userID);
-  await User.deleteOne({ _id: userID });
+const deleteUser = async (request, response) => {
+  const {
+    params: { userID },
+    user,
+  } = request;
 
-  res.send(`${name} deleted!`);
+  // console.log(token);
+  // "_id": "685c232c75402d54877fe178",
+  //   "name": "Motola",
+  //   "email": "motola@hotmail.com",
+  //   "password": "$2b$10$5tmMJi5LV7xJTfLigU8oLOl86aQ/D6kF1kaw82PXpoR0DHhGPKocy",
+  //   "isAdmin": false,
+  //   "hobbies": [],
+  //   "posts": [
+  //     "685c232c75402d54877fe178",
+  //     "685c33f4adadaaf01c1eb3b5"
+
+  const isValid =
+    mongoose.Types.ObjectId.isValid(userID) &&
+    String(new mongoose.Types.ObjectId(userID)) === userID;
+
+  if (!isValid) return response.status(400).send({ msg: "Invalid user ID" });
+
+  if (user.userId !== userID && !user.isAdmin) {
+    return response
+      .status(403)
+      .send({ msg: "You do not have permission to perform this action." });
+  }
+
+  const foundUser = await User.findById(userID);
+  if (!foundUser) return response.status(404).send({ msg: "User not found!" });
+
+  // const { name } = await User.findById(userID);
+  await User.findByIdAndDelete("685c33f4adadaaf01c1eb3b5");
+
+  return response.send(`${userID} deleted!`);
 };
 
 module.exports = {
